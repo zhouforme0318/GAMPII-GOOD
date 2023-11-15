@@ -6981,31 +6981,36 @@ void FtpUtil::GetAntexIGS(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     chdir(dir.c_str());
 #endif
 
-    std::string atxfile("igs14.atx");
-    if (access(atxfile.c_str(), 0) == -1)
+    std::vector<std::string> atxfiles = {"igs14.atx", "igs20.atx"};
+    std::string atxfile;
+    for (int i = 0; i < atxfiles.size(); i++)
     {
-        std::string wgetfull = fopt->wgetfull, qr = fopt->qr;
-        std::string url = "https://files.igs.org/pub/station/general/" + atxfile;
-        std::string cmd = wgetfull + " " + qr + " -nH --cut-dirs=3 " + url;
-        std::system(cmd.c_str());
+        atxfile = atxfiles[i];
+        if (access(atxfile.c_str(), 0) == -1)
+        {
+            std::string wgetfull = fopt->wgetfull, qr = fopt->qr;
+            std::string url = "https://files.igs.org/pub/station/general/" + atxfile;
+            std::string cmd = wgetfull + " " + qr + " -nH --cut-dirs=3 " + url;
+            std::system(cmd.c_str());
 
-        std::string sep;
-        sep.push_back((char)FILEPATHSEP);
-        std::string localfile = dir + sep + atxfile;
-        if (access(atxfile.c_str(), 0) == 0)
-        {
-            Logger::Trace(TINFO, "*** INFO(FtpUtil::GetAntexIGS): successfully download IGS ANTEX file " + atxfile);
-            if (fplog_.is_open()) fplog_ << "* INFO(FtpUtil::GetAntexIGS): " << url << "  ->  " <<
-                localfile << "  OK" << std::endl;
+            std::string sep;
+            sep.push_back((char)FILEPATHSEP);
+            std::string localfile = dir + sep + atxfile;
+            if (access(atxfile.c_str(), 0) == 0)
+            {
+                Logger::Trace(TINFO, "*** INFO(FtpUtil::GetAntexIGS): successfully download IGS ANTEX file " + atxfile);
+                if (fplog_.is_open()) fplog_ << "* INFO(FtpUtil::GetAntexIGS): " << url << "  ->  " <<
+                    localfile << "  OK" << std::endl;
+            }
+            else
+            {
+                Logger::Trace(TWARNING, "*** WARNING(FtpUtil::GetAntexIGS): failed to download IGS ANTEX file " + atxfile);
+                if (fplog_.is_open()) fplog_ << "* WARNING(FtpUtil::GetAntexIGS): " << url << "  ->  " <<
+                    localfile << "  failed" << std::endl;
+            }
         }
-        else
-        {
-            Logger::Trace(TWARNING, "*** WARNING(FtpUtil::GetAntexIGS): failed to download IGS ANTEX file " + atxfile);
-            if (fplog_.is_open()) fplog_ << "* WARNING(FtpUtil::GetAntexIGS): " << url << "  ->  " <<
-                localfile << "  failed" << std::endl;
-        }
+        else Logger::Trace(TINFO, "*** INFO(FtpUtil::GetAntexIGS): IGS ANTEX file " + atxfile + " has existed!");
     }
-    else Logger::Trace(TINFO, "*** INFO(FtpUtil::GetAntexIGS): IGS ANTEX file " + atxfile + " has existed!");
 } /* end of GetAntexIGS */
 
 /**
