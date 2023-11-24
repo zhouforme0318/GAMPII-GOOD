@@ -44,7 +44,7 @@ cd ~/GAMPII-GOOD
 mkdir build && cd build
 
 cmake ../ -DCMAKE_BUILD_TYPE=Release 
-make -j8
+make -j3
 
 # Run GOOD
 cd ~/GAMPII-GOOD
