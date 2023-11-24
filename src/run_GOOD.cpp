@@ -20,11 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-#include "common/common.h"
-#include "common/types.h"
-#include "common/gtime.h"
 #include "common/logger.h"
-#include "common/cstring.h"
 #include "core/config.h"
 
 

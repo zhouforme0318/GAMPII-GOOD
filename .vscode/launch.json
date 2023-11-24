@@ -9,10 +9,10 @@
             "type": "cppvsdbg",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            // "program": "${workspaceFolder}/bin/Debug/run_GOOD",
-            "program": "${workspaceFolder}/bin/Release/run_GOOD",
+            "program": "${workspaceFolder}/bin/Debug/run_GOOD",
+            // "program": "${workspaceFolder}/bin/Release/run_GOOD",
             "args": [
-                "./dataset/GOOD_cfg.yaml"
+                "./dataset_Win/GOOD_cfg.yaml"
             ],
             "stopAtEntry": false,
             "environment": [],
@@ -25,7 +25,7 @@
             "cwd": "${workspaceFolder}",
             "program": "${workspaceFolder}/bin/run_GOOD",
             "args": [
-                "./dataset/GOOD_cfg.yaml"
+                "./dataset_Linux/GOOD_cfg.yaml"
             ],
             "stopAtEntry": false,
             "environment": [],
