@@ -73,33 +73,33 @@ getOrbClk:                        # Satellite final/rapid/ultra-rapid precise or
   nHH4oc : 2                      #   4th: The consecutive sessions, i.e., '00  3' denotes 00, 06, and 12 for esa_u and/or igs_u, 00, 03, and 06 for gfz_u, while 00, 01, and 02 for whu_u.
   l2s4oc : 2                      #   5th: Valid only for the precise orbit and clock files with long name, 0: long name, 1: short name, 2: long and short name
 getEop:                           # Earth rotation/orientation parameter (ERP/EOP) downloading option
-  opt4eop: 1                      #   1st: (0: off  1: on);
+  opt4eop: 0                      #   1st: (0: off  1: on);
   eopFrom: igs                    #   2nd: Analysis center (i.e., final: 'cod', 'emr', 'esa', 'gfz', 'grg', 'igs', 'jpl', 'mit'; ultra-rapid: 'esa_u', 'gfz_u', 'igs_u').
   sHH4eop: 01                     #   3rd: Valid ONLY when  the 2nd item 'esa_u', 'gfz_u', or 'igs_u' is set.
   nHH4eop: 4                      #   4th: Valid ONLY when  the 2nd item 'esa_u', 'gfz_u', or 'igs_u' is set.
   l2s4eop: 2                      #   5th: Valid only for EOP file with long name, 0: long name, 1: short name, 2: long and short name
 getObx:                           # ORBEX (ORBit EXchange format) for satellite attitude information downloading option
-  opt4obx: 1                      #   1st: (0: off  1: on);
+  opt4obx: 0                      #   1st: (0: off  1: on);
   obxFrom: all                    #   2nd: Analysis center (i.e., final/rapid: 'cod', 'gfz', 'grg', 'whu', 'all'; real-time: 'cnt'). NOTE: The option of 'cnt' is for real-time ORBEX from CNES offline files.
 getDsb:                           # Differential code/signal bias (DCB/DSB) downloading option
-  opt4dsb: 1                      #   1st: (0: off  1: on);
+  opt4dsb: 0                      #   1st: (0: off  1: on);
   dsbFrom: all                    #   2nd: Analysis center (i.e., 'cod', 'cas', 'all'). NOTE: DCBs from CODE are for GPS and GLONASS, while DSBs from CAS are for multiple GNSS.
 getOsb:                           # Observable-specific signal bias (OSB) downloading option
-  opt4osb: 1                      #   1st: (0: off  1: on);
+  opt4osb: 0                      #   1st: (0: off  1: on);
   osbFrom: cas                    #   2nd: Analysis center (i.e., final/rapid: 'cas', 'cod', 'gfz', 'grg', 'whu', 'all'; real-time: 'cnt'). NOTE: The option of 'cnt' is for real-time OSBs from CNES offline files.
 getSnx:                           # IGS weekly SINEX downloading option
-  opt4snx: 1                      #   1st: (0: off  1: on)
+  opt4snx: 0                      #   1st: (0: off  1: on)
   l2s4snx: 2                      #   2nd: Valid only for IGS weekly SINEX file with long name, 0: long name, 1: short name, 2: long and short name
 getIon:                           # Global ionosphere map (GIM) downloading option
-  opt4ion: 1                      #   1st: (0: off  1: on);
+  opt4ion: 0                      #   1st: (0: off  1: on);
   ionFrom: igs                    #   2nd: Analysis center (i.e., final: 'cas', 'cod', 'emr', 'esa', 'igs', 'jpl', 'upc', 'all', 'cas+cod', 'cas+cod+igs', ...;)
   l2s4ion: 2                      #   3rd: Valid only for the ionosphere files with long name, 0: long name, 1: short name, 2: long and short name
 getRoti:                          # Rate of TEC index (ROTI) downloading option
   opt4rot: 0                      # (0: off  1: on)
 getTrp:                           # CODE/IGS tropospheric product downloading option
-  opt4trp: 1                      #   1st: (0:off  1:on);
+  opt4trp: 0                      #   1st: (0:off  1:on);
   trpFrom: cod                    #   2nd: Analysis center (i.e., 'igs' or 'cod');
   trpList: site_trp.list          #   3rd: the file name of site.list. NOTE: It is valid ONLY when the 2nd item 'igs' is set.
   l2s4trp: 2                      #   4th: Valid only for the troposphere files with long name, 0: long name, 1: short name, 2: long and short name
 getAtx:                           # ANTEX format antenna phase center correction downloading option
-  opt4atx: 1                      # (0:off  1:on)
+  opt4atx: 0                      # (0:off  1:on)
