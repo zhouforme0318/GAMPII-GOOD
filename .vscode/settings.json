@@ -89,6 +89,12 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
-    }
+        "xutility": "cpp",
+        "cwctype": "cpp",
+        "strstream": "cpp",
+        "*.tcc": "cpp",
+        "memory_resource": "cpp",
+        "string_view": "cpp"
+    },
+    "editor.inlineSuggest.showToolbar": "onHover"
 }

@@ -101,6 +101,11 @@
  *           2023/02/13 2.2  the modifications in IGS and the other AC final, rapid and ultra-rapid prodcuts downloading for the adaptation of long file name (by Feng Zhou @ SDUST)
  *           2023/10/06 3.0  mojor modifications and improvements (by Feng Zhou @ SDUST)
  *           2023/11/05      all product downloads with long file names have been adapted (by Feng Zhou @ SDUST)
+ *           2023/12/14      fix a bug when the station list file was named "all" (by Feng Zhou @ SDUST)
+ *           2023/12/25      add the Python script 'run_GOOD.py' to make GOOD easier to use (by Feng Zhou @ SDUST)
+ *           2024/01/30 3.1  add the option of merging SP3 files into one file (by Feng Zhou @ SDUST)
+ *           2024/02/15      fix some bugs during the various tests (by Feng Zhou @ SDUST)
+ *           2024/02/20      add two Bash scripts named 'crx_downloaded_fromGA.sh' and 'rxo_downloaded_fromGA.sh' for GA observations downloading (by Feng Zhou @ SDUST)
  *----------------------------------------------------------------------------*/
 #include "../common/common.h"
 #include "../common/gtime.h"
@@ -256,7 +261,9 @@ void FtpUtil::GetDailyObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the IGS observation files */
         std::string url, cutdirs = " --cut-dirs=7 ";
@@ -279,7 +286,7 @@ void FtpUtil::GetDailyObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         std::string suffix = "." + syy + "d";
         std::vector<std::string> dfiles;
         CString::GetFilesAll(subdir, suffix, dfiles);
-        for (int i = 0; i < dfiles.size(); i++)
+        for (size_t i = 0; i < dfiles.size(); i++)
         {
             if (access(dfiles[i].c_str(), 0) == 0)
             {
@@ -323,12 +330,13 @@ void FtpUtil::GetDailyObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
                 CString::ToLower(sitname);
                 std::string ofile = sitname + sdoy + "0." + syy + "o";
                 std::string dfile = sitname + sdoy + "0." + syy + "d";
@@ -467,10 +475,12 @@ void FtpUtil::GetHourlyObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the IGS observation files */
-        for (int i = 0; i < fopt->hhobs.size(); i++)
+        for (size_t i = 0; i < fopt->hhobs.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhobs[i], 2);
             char tmpdir[MAXSTRPATH] = { '\0' };
@@ -520,7 +530,7 @@ void FtpUtil::GetHourlyObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             std::string suffix = "." + syy + "d";
             std::vector<std::string> dfiles;
             CString::GetFilesAll(shhdir, suffix, dfiles);
-            for (int i = 0; i < dfiles.size(); i++)
+            for (size_t i = 0; i < dfiles.size(); i++)
             {
                 if (access(dfiles[i].c_str(), 0) == 0)
                 {
@@ -565,13 +575,14 @@ void FtpUtil::GetHourlyObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhobs.size(); i++)
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
+                for (size_t i = 0; i < fopt->hhobs.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhobs[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -740,10 +751,12 @@ void FtpUtil::GetHrObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the IGS observation files */
-        for (int i = 0; i < fopt->hhobs.size(); i++)
+        for (size_t i = 0; i < fopt->hhobs.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhobs[i], 2);
             char tmpdir[MAXSTRPATH] = { '\0' };
@@ -793,13 +806,13 @@ void FtpUtil::GetHrObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             std::system(cmd.c_str());
 
             std::vector<std::string> smin = { "00", "15", "30", "45" };
-            for (int i = 0; i < smin.size(); i++)
+            for (size_t i = 0; i < smin.size(); i++)
             {
                 /* get the file list */
                 std::string suffix = smin[i] + "." + syy + "d";
                 std::vector<std::string> dfiles;
                 CString::GetFilesAll(shhdir, suffix, dfiles);
-                for (int j = 0; j < dfiles.size(); j++)
+                for (size_t j = 0; j < dfiles.size(); j++)
                 {
                     if (access(dfiles[j].c_str(), 0) == 0)
                     {
@@ -845,13 +858,14 @@ void FtpUtil::GetHrObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhobs.size(); i++)
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
+                for (size_t i = 0; i < fopt->hhobs.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhobs[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -882,7 +896,7 @@ void FtpUtil::GetHrObsIgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                     std::string sch;
                     sch.push_back(ch);
                     std::vector<std::string> smin = { "00", "15", "30", "45" };
-                    for (int i = 0; i < smin.size(); i++)
+                    for (size_t i = 0; i < smin.size(); i++)
                     {
                         CString::ToLower(sitname);
                         std::string ofile = sitname + sdoy + sch + smin[i] + "." + syy + "o";
@@ -1035,7 +1049,9 @@ void FtpUtil::GetDailyObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the MGEX observation files */
         std::string url, cutdirs = " --cut-dirs=7 ";
@@ -1058,7 +1074,7 @@ void FtpUtil::GetDailyObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         std::string suffix = ".crx";
         std::vector<std::string> crxfiles;
         CString::GetFilesAll(subdir, suffix, crxfiles);
-        for (int i = 0; i < crxfiles.size(); i++)
+        for (size_t i = 0; i < crxfiles.size(); i++)
         {
             if (access(crxfiles[i].c_str(), 0) == 0)
             {
@@ -1118,12 +1134,13 @@ void FtpUtil::GetDailyObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
                 CString::ToLower(sitname);
                 std::string ofile = sitname + sdoy + "0." + syy + "o";
                 CString::ToUpper(sitname);
@@ -1257,10 +1274,12 @@ void FtpUtil::GetHourlyObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the MGEX observation files */
-        for (int i = 0; i < fopt->hhobs.size(); i++)
+        for (size_t i = 0; i < fopt->hhobs.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhobs[i], 2);
             char tmpdir[MAXSTRPATH] = { '\0' };
@@ -1312,7 +1331,7 @@ void FtpUtil::GetHourlyObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt
             std::vector<std::string> crxfiles;
             CString::GetFilesAll(shhdir, suffix, crxfiles);
             std::string sitname;
-            for (int i = 0; i < crxfiles.size(); i++)
+            for (size_t i = 0; i < crxfiles.size(); i++)
             {
                 if (access(crxfiles[i].c_str(), 0) == 0)
                 {
@@ -1373,13 +1392,14 @@ void FtpUtil::GetHourlyObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhobs.size(); i++)
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
+                for (size_t i = 0; i < fopt->hhobs.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhobs[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -1546,10 +1566,12 @@ void FtpUtil::GetHrObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the MGEX observation files */
-        for (int i = 0; i < fopt->hhobs.size(); i++)
+        for (size_t i = 0; i < fopt->hhobs.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhobs[i], 2);
             char tmpdir[MAXSTRPATH] = { '\0' };
@@ -1601,14 +1623,14 @@ void FtpUtil::GetHrObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             sch.push_back(ch);
 
             std::vector<std::string> smin = { "00", "15", "30", "45" };
-            for (int i = 0; i < smin.size(); i++)
+            for (size_t i = 0; i < smin.size(); i++)
             {
                 /* get the file list */
                 std::string suffix = smin[i] + "_15M_01S_MO.crx";
                 std::vector<std::string> crxfiles;
                 CString::GetFilesAll(shhdir, suffix, crxfiles);
                 std::string sitname;
-                for (int j = 0; j < crxfiles.size(); j++)
+                for (size_t j = 0; j < crxfiles.size(); j++)
                 {
                     if (access(crxfiles[j].c_str(), 0) == 0)
                     {
@@ -1654,13 +1676,14 @@ void FtpUtil::GetHrObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhobs.size(); i++)
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
+                for (size_t i = 0; i < fopt->hhobs.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhobs[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -1692,7 +1715,7 @@ void FtpUtil::GetHrObsMgex(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                     sch.push_back(ch);
 
                     std::vector<std::string> smin = { "00", "15", "30", "45" };
-                    for (int i = 0; i < smin.size(); i++)
+                    for (size_t i = 0; i < smin.size(); i++)
                     {
                         CString::ToLower(sitname);
                         std::string ofile = sitname + sdoy + sch + smin[i] + "." + syy + "o";
@@ -1847,7 +1870,9 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* download all the MGEX observation files */
         std::string url, cutdirs = " --cut-dirs=7 ";
@@ -1871,7 +1896,7 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         std::vector<std::string> crxfiles;
         CString::GetFilesAll(subdir, suffix, crxfiles);
         std::string sitname;
-        for (int i = 0; i < crxfiles.size(); i++)
+        for (size_t i = 0; i < crxfiles.size(); i++)
         {
             if (access(crxfiles[i].c_str(), 0) == 0)
             {
@@ -1922,7 +1947,7 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         suffix = "." + syy + "d";
         std::vector<std::string> dfiles;
         CString::GetFilesAll(subdir, suffix, dfiles);
-        for (int i = 0; i < dfiles.size(); i++)
+        for (size_t i = 0; i < dfiles.size(); i++)
         {
             if (access(dfiles[i].c_str(), 0) == 0)
             {
@@ -1977,12 +2002,13 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
                 CString::ToLower(sitname);
                 std::string ofile = sitname + sdoy + "0." + syy + "o";
                 std::string dfile = sitname + sdoy + "0." + syy + "d";
@@ -2020,7 +2046,6 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 #endif
                     cmd = change_filename + " " + crxfile + " " + dfile;
                     std::system(cmd.c_str());
-                    bool isgz = true;
 
                     char tmpfile[MAXSTRPATH] = { '\0' };
                     char sep = (char)FILEPATHSEP;
@@ -2035,7 +2060,6 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
                         cmd = change_filename + " " + crxfile + " " + dfile;
                         std::system(cmd.c_str());
-                        isgz = false;
                         if (access(dfile.c_str(), 0) == -1)
                         {
                             /* download the IGS observation file site-by-site */
@@ -2061,7 +2085,6 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                                 /* extract '*.gz' */
                                 cmd = gzipfull + " -d -f " + dgzfile;
                                 std::system(cmd.c_str());
-                                isgz = true;
 
                                 if (access(dfile.c_str(), 0) == 0 && access(dzfile.c_str(), 0) == 0)
                                 {
@@ -2079,7 +2102,6 @@ void FtpUtil::GetDailyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                                 /* extract '*.Z' */
                                 cmd = gzipfull + " -d -f " + dzfile;
                                 std::system(cmd.c_str());
-                                isgz = false;
                             }
                             if (access(dfile.c_str(), 0) == -1)
                             {
@@ -2170,9 +2192,11 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
-        for (int i = 0; i < fopt->hhobs.size(); i++)
+        for (size_t i = 0; i < fopt->hhobs.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhobs[i], 2);
             char tmpdir[MAXSTRPATH] = { '\0' };
@@ -2227,7 +2251,7 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             std::vector<std::string> crxfiles;
             CString::GetFilesAll(shhdir, suffix, crxfiles);
             std::string sitname;
-            for (int i = 0; i < crxfiles.size(); i++)
+            for (size_t i = 0; i < crxfiles.size(); i++)
             {
                 if (access(crxfiles[i].c_str(), 0) == 0)
                 {
@@ -2280,7 +2304,7 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             suffix = "." + syy + "d";
             std::vector<std::string> dfiles;
             CString::GetFilesAll(shhdir, suffix, dfiles);
-            for (int i = 0; i < dfiles.size(); i++)
+            for (size_t i = 0; i < dfiles.size(); i++)
             {
                 if (access(dfiles[i].c_str(), 0) == 0)
                 {
@@ -2336,13 +2360,14 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhobs.size(); i++)
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
+                for (size_t i = 0; i < fopt->hhobs.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhobs[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -2409,7 +2434,6 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 #endif
                         cmd = change_filename + " " + crxfile + " " + dfile;
                         std::system(cmd.c_str());
-                        bool isgz = true;
 
                         char tmpfile[MAXSTRPATH] = { '\0' };
                         char sep = (char)FILEPATHSEP;
@@ -2424,7 +2448,6 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
                             cmd = change_filename + " " + crxfile + " " + dfile;
                             std::system(cmd.c_str());
-                            isgz = false;
                             if (access(dfile.c_str(), 0) == -1)
                             {
                                 /* download the IGS observation file site-by-site */
@@ -2450,7 +2473,6 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                                     /* extract '*.gz' */
                                     cmd = gzipfull + " -d -f " + dgzfile;
                                     std::system(cmd.c_str());
-                                    isgz = true;
 
                                     if (access(dfile.c_str(), 0) == 0 && access(dzfile.c_str(), 0) == 0)
                                     {
@@ -2468,7 +2490,6 @@ void FtpUtil::GetHourlyObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                                     /* extract '*.Z' */
                                     cmd = gzipfull + " -d -f " + dzfile;
                                     std::system(cmd.c_str());
-                                    isgz = false;
                                 }
                                 if (access(dfile.c_str(), 0) == -1)
                                 {
@@ -2560,9 +2581,11 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::trim(ftpname);
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
-        for (int i = 0; i < fopt->hhobs.size(); i++)
+        for (size_t i = 0; i < fopt->hhobs.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhobs[i], 2);
             char tmpdir[MAXSTRPATH] = { '\0' };
@@ -2616,14 +2639,14 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             sch.push_back(ch);
 
             std::vector<std::string> smin = { "00", "15", "30", "45" };
-            for (int i = 0; i < smin.size(); i++)
+            for (size_t i = 0; i < smin.size(); i++)
             {
                 /* get the file list */
                 std::string suffix = smin[i] + "_15M_01S_MO.crx";
                 std::vector<std::string> crxfiles;
                 CString::GetFilesAll(shhdir, suffix, crxfiles);
                 std::string sitname;
-                for (int j = 0; j < crxfiles.size(); j++)
+                for (size_t j = 0; j < crxfiles.size(); j++)
                 {
                     if (access(crxfiles[j].c_str(), 0) == 0)
                     {
@@ -2676,14 +2699,14 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             cmd = wgetfull + " " + qr + " -nH -A " + dxfile + cutdirs + url;
             std::system(cmd.c_str());
 
-            for (int i = 0; i < smin.size(); i++)
+            for (size_t i = 0; i < smin.size(); i++)
             {
                 /* get the file list */
                 std::string suffix = smin[i] + "." + syy + "d";
                 std::vector<std::string> dfiles;
                 CString::GetFilesAll(shhdir, suffix, dfiles);
                 std::string sitname;
-                for (int j = 0; j < dfiles.size(); j++)
+                for (size_t j = 0; j < dfiles.size(); j++)
                 {
                     if (access(dfiles[j].c_str(), 0) == 0)
                     {
@@ -2730,13 +2753,14 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhobs.size(); i++)
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
+                for (size_t i = 0; i < fopt->hhobs.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhobs[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -2768,7 +2792,7 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                     sch.push_back(ch);
 
                     std::vector<std::string> smin = { "00", "15", "30", "45" };
-                    for (int i = 0; i < smin.size(); i++)
+                    for (size_t i = 0; i < smin.size(); i++)
                     {
                         CString::ToLower(sitname);
                         std::string ofile = sitname + sdoy + sch + smin[i] + "." + syy + "o";
@@ -2810,7 +2834,6 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 #endif
                             cmd = change_filename + " " + crxfile + " " + dfile;
                             std::system(cmd.c_str());
-                            bool isgz = true;
 
                             char tmpfile[MAXSTRPATH] = { '\0' };
                             char sep = (char)FILEPATHSEP;
@@ -2825,7 +2848,6 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
                                 cmd = change_filename + " " + crxfile + " " + dfile;
                                 std::system(cmd.c_str());
-                                isgz = false;
                                 if (access(dfile.c_str(), 0) == -1)
                                 {
                                     if (ftpname == "CDDIS") url = ftparchive_.CDDIS[IDX_OBSHR] + "/" +
@@ -2855,7 +2877,6 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                                         /* extract '*.gz' */
                                         cmd = gzipfull + " -d -f " + dgzfile;
                                         std::system(cmd.c_str());
-                                        isgz = true;
 
                                         if (access(dfile.c_str(), 0) == 0 && access(dzfile.c_str(), 0) == 0)
                                         {
@@ -2873,7 +2894,6 @@ void FtpUtil::GetHrObsIgm(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                                         /* extract '*.Z' */
                                         cmd = gzipfull + " -d -f " + dzfile;
                                         std::system(cmd.c_str());
-                                        isgz = false;
                                     }
                                     if (access(dfile.c_str(), 0) == -1)
                                     {
@@ -2981,12 +3001,13 @@ void FtpUtil::GetDailyObsCut(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             return;
         }
 
-        std::string sitname;
-        while (getline(sitlst, sitname))
+        std::string site, sitname;
+        while (getline(sitlst, site))
         {
-            if (sitname[0] == '#') continue;
-            CString::trim(sitname);
-            if (sitname.size() != 4) continue;
+            if (site[0] == '#') continue;
+            CString::trim(site);
+            if (site.size() < 4) continue;
+            sitname = site.substr(0, 4);
             CString::ToLower(sitname);
             std::string ofile = sitname + sdoy + "0." + syy + "o";
             if (access(ofile.c_str(), 0) == -1)
@@ -3106,12 +3127,13 @@ void FtpUtil::Get30sObsHk(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             return;
         }
 
-        std::string sitname;
-        while (getline(sitlst, sitname))
+        std::string site, sitname;
+        while (getline(sitlst, site))
         {
-            if (sitname[0] == '#') continue;
-            CString::trim(sitname);
-            if (sitname.size() != 4) continue;
+            if (site[0] == '#') continue;
+            CString::trim(site);
+            if (site.size() < 4) continue;
+            sitname = site.substr(0, 4);
             CString::ToLower(sitname);
             std::string ofile = sitname + sdoy + "0." + syy + "o";
             std::string url = url0 + "/" + sitname + "/30s";
@@ -3233,13 +3255,14 @@ void FtpUtil::Get5sObsHk(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             return;
         }
 
-        std::string sitname;
-        while (getline(sitlst, sitname))
+        std::string site, sitname;
+        while (getline(sitlst, site))
         {
-            if (sitname[0] == '#') continue;
-            CString::trim(sitname);
-            if (sitname.size() != 4) continue;
-            for (int i = 0; i < fopt->hhobs.size(); i++)
+            if (site[0] == '#') continue;
+            CString::trim(site);
+            if (site.size() < 4) continue;
+            sitname = site.substr(0, 4);
+            for (size_t i = 0; i < fopt->hhobs.size(); i++)
             {
                 std::string shh = CString::int2str(fopt->hhobs[i], 2);
                 char tmpdir[MAXSTRPATH] = { '\0' };
@@ -3389,13 +3412,14 @@ void FtpUtil::Get1sObsHk(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             return;
         }
 
-        std::string sitname;
-        while (getline(sitlst, sitname))
+        std::string site, sitname;
+        while (getline(sitlst, site))
         {
-            if (sitname[0] == '#') continue;
-            CString::trim(sitname);
-            if (sitname.size() != 4) continue;
-            for (int i = 0; i < fopt->hhobs.size(); i++)
+            if (site[0] == '#') continue;
+            CString::trim(site);
+            if (site.size() < 4) continue;
+            sitname = site.substr(0, 4);
+            for (size_t i = 0; i < fopt->hhobs.size(); i++)
             {
                 std::string shh = CString::int2str(fopt->hhobs[i], 2);
                 char tmpdir[MAXSTRPATH] = { '\0' };
@@ -3546,12 +3570,13 @@ void FtpUtil::GetDailyObsNgs(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             return;
         }
 
-        std::string sitname;
-        while (getline(sitlst, sitname))
+        std::string site, sitname;
+        while (getline(sitlst, site))
         {
-            if (sitname[0] == '#') continue;
-            CString::trim(sitname);
-            if (sitname.size() != 4) continue;
+            if (site[0] == '#') continue;
+            CString::trim(site);
+            if (site.size() < 4) continue;
+            sitname = site.substr(0, 4);
             CString::ToLower(sitname);
             std::string ofile = sitname + sdoy + "0." + syy + "o";
             if (access(ofile.c_str(), 0) == -1)
@@ -3659,7 +3684,9 @@ void FtpUtil::GetDailyObsEpn(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
     std::string url = "ftp://ftp.epncb.oma.be/pub/obs/" + syyyy + "/" + sdoy;
     std::string cutdirs = " --cut-dirs=4 ";
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* it is OK for '*.gz' format */
         std::string crxfile = "*" + syyyy + sdoy + "0000_01D_30S_MO.crx";
@@ -3672,7 +3699,7 @@ void FtpUtil::GetDailyObsEpn(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         std::vector<std::string> crxfiles;
         CString::GetFilesAll(subdir, suffix, crxfiles);
         std::string sitname;
-        for (int i = 0; i < crxfiles.size(); i++)
+        for (size_t i = 0; i < crxfiles.size(); i++)
         {
             if (access(crxfiles[i].c_str(), 0) == 0)
             {
@@ -3716,12 +3743,13 @@ void FtpUtil::GetDailyObsEpn(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
                 CString::ToLower(sitname);
                 std::string ofile = sitname + sdoy + "0." + syy + "o";
                 std::string dfile = sitname + sdoy + "0." + syy + "d";
@@ -3854,12 +3882,13 @@ void FtpUtil::GetDailyObsPbo(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             return;
         }
 
-        std::string sitname;
-        while (getline(sitlst, sitname))
+        std::string site, sitname;
+        while (getline(sitlst, site))
         {
-            if (sitname[0] == '#') continue;
-            CString::trim(sitname);
-            if (sitname.size() != 4) continue;
+            if (site[0] == '#') continue;
+            CString::trim(site);
+            if (site.size() < 4) continue;
+            sitname = site.substr(0, 4);
             CString::ToLower(sitname);
             std::string ofile = sitname + sdoy + "0." + syy + "o";
             std::string dfile = sitname + sdoy + "0." + syy + "d";
@@ -3980,7 +4009,9 @@ void FtpUtil::GetDailyObsChi(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, crx2rnxfull = fopt->crx2rnxfull, qr = fopt->qr;
     std::string url = "http://gps.csn.uchile.cl/data/" + syyyy + "/" + sdoy;
     std::string cutdirs = " --cut-dirs=3 ";
-    if (strlen(fopt->obslist.c_str()) < 9)  /* the option of 'all' is selected; the length of "site.list" is nine */
+    std::string::size_type ipos = fopt->obslist.find_last_of(sep) + 1;
+    std::string obslist = fopt->obslist.substr(ipos, fopt->obslist.length() - ipos);
+    if ((int)obslist.length() < 9) /* the option of 'all' is selected; the length of "site.list" is nine */
     {
         /* it is OK for '*.Z' or '*.gz' format */
         std::string dfile = "*" + sdoy + "0." + syy + "d";
@@ -3993,7 +4024,7 @@ void FtpUtil::GetDailyObsChi(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         std::vector<std::string> dfiles;
         CString::GetFilesAll(subdir, suffix, dfiles);
         std::string sitname;
-        for (int i = 0; i < dfiles.size(); i++)
+        for (size_t i = 0; i < dfiles.size(); i++)
         {
             if (access(dfiles[i].c_str(), 0) == 0)
             {
@@ -4036,12 +4067,13 @@ void FtpUtil::GetDailyObsChi(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 return;
             }
 
-            std::string sitname;
-            while (getline(sitlst, sitname))
+            std::string site, sitname;
+            while (getline(sitlst, site))
             {
-                if (sitname[0] == '#') continue;
-                CString::trim(sitname);
-                if (sitname.size() != 4) continue;
+                if (site[0] == '#') continue;
+                CString::trim(site);
+                if (site.size() < 4) continue;
+                sitname = site.substr(0, 4);
                 CString::ToLower(sitname);
                 std::string ofile = sitname + sdoy + "0." + syy + "o";
                 std::string dfile = sitname + sdoy + "0." + syy + "d";
@@ -4362,7 +4394,7 @@ void FtpUtil::GetNav(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 if (sitname[0] == '#') continue;
                 CString::trim(sitname);
                 if (sitname.size() != 4) continue;
-                for (int i = 0; i < fopt->hhnav.size(); i++)
+                for (size_t i = 0; i < fopt->hhnav.size(); i++)
                 {
                     std::string shh = CString::int2str(fopt->hhnav[i], 2);
                     char tmpdir[MAXSTRPATH] = { '\0' };
@@ -4472,7 +4504,7 @@ void FtpUtil::GetNav(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                         nav0Files.push_back(navml0File);
                     }
 
-                    for (int i = 0; i < navfiles.size(); i++)
+                    for (size_t i = 0; i < navfiles.size(); i++)
                     {
                         std::string url, cutdirs = " --cut-dirs=7 ";
                         if (ftpname == "CDDIS") url = ftparchive_.CDDIS[IDX_OBMH] + "/" +
@@ -4601,7 +4633,7 @@ void FtpUtil::GetOrbClk(gtime_t ts, std::vector<std::string> dirs, int prodType,
         std::vector<std::string> sp3clkfiles = { sp3file, clkfile };
         std::string sp3gzfile = sp3file + ".gz", clkgzfile = clkfile + ".gz";
         std::vector<std::string> sp3clkgzfiles = { sp3gzfile, clkgzfile };
-        for (int i = 0; i < sp3clkfiles.size(); i++)
+        for (size_t i = 0; i < sp3clkfiles.size(); i++)
         {
             /* change directory */
 #ifdef _WIN32   /* for Windows */
@@ -4641,7 +4673,7 @@ void FtpUtil::GetOrbClk(gtime_t ts, std::vector<std::string> dirs, int prodType,
 
                 /* delete some temporary directories */
                 std::vector<std::string> tmpdir = { "FORMAT_BIAIS_OFFI1", "FORMATBIAS_OFF_v1" };
-                for (int i = 0; i < tmpdir.size(); i++)
+                for (size_t i = 0; i < tmpdir.size(); i++)
                 {
                     if (access(tmpdir[i].c_str(), 0) == 0)
                     {
@@ -4713,7 +4745,7 @@ void FtpUtil::GetOrbClk(gtime_t ts, std::vector<std::string> dirs, int prodType,
             idx = 3;
         }
 
-        for (int i = 0; i < fopt->hhorbclk[idx].size(); i++)
+        for (size_t i = 0; i < fopt->hhorbclk[idx].size(); i++)
         {
             std::string shh = CString::int2str(fopt->hhorbclk[idx][i], 2);
             std::string sp3fileshort = acFile + swwww + sdow + "_" + shh + ".sp3";
@@ -4908,7 +4940,7 @@ void FtpUtil::GetOrbClk(gtime_t ts, std::vector<std::string> dirs, int prodType,
         std::vector<std::string> sp3clkzfiles = { sp3zfile, clkzfile };
         std::string sp3xfile = sp3file + ".*", clkxfile = clkfile + ".*";
         std::vector<std::string> sp3clkxfiles = { sp3xfile, clkxfile };
-        for (int i = 0; i < sp3clkfiles.size(); i++)
+        for (size_t i = 0; i < sp3clkfiles.size(); i++)
         {
             /* change directory */
 #ifdef _WIN32   /* for Windows */
@@ -5122,7 +5154,7 @@ void FtpUtil::GetOrbClk(gtime_t ts, std::vector<std::string> dirs, int prodType,
         else if (ftpname == "IGN") url = ftparchive_.IGN[IDX_SP3] + "/" + swwww;
         else if (ftpname == "WHU") url = ftparchive_.WHU[IDX_SP3] + "/" + swwww;
         else url = ftparchive_.CDDIS[IDX_SP3] + "/" + swwww;
-        for (int i = 0; i < sp3clkfilelong.size(); i++)
+        for (size_t i = 0; i < sp3clkfilelong.size(); i++)
         {
             /* change directory */
 #ifdef _WIN32   /* for Windows */
@@ -5303,7 +5335,7 @@ void FtpUtil::GetOrbClk(gtime_t ts, std::vector<std::string> dirs, int prodType,
         else if (ftpname == "IGN") url = ftparchive_.IGN[IDX_SP3M] + "/" + swwww;
         else if (ftpname == "WHU") url = ftparchive_.WHU[IDX_SP3M] + "/" + swwww;
         else url = ftparchive_.CDDIS[IDX_SP3M] + "/" + swwww;
-        for (int i = 0; i < sp3clkfilelong.size(); i++)
+        for (size_t i = 0; i < sp3clkfilelong.size(); i++)
         {
             /* change directory */
 #ifdef _WIN32   /* for Windows */
@@ -5438,8 +5470,7 @@ void FtpUtil::GetEop(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     */
     std::vector<std::string> ultraAc = { "esa_u", "gfz_u", "igs_u" };
     bool isUltra = false;
-    int i = 0;
-    for (i = 0; i < ultraAc.size(); i++)
+    for (size_t i = 0; i < ultraAc.size(); i++)
     {
         if (ac == ultraAc[i])
         {
@@ -5458,7 +5489,7 @@ void FtpUtil::GetEop(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     */
     std::vector<std::string> finalAcIGS = { "cod", "emr", "esa", "gfz", "grg", "igs", "jpl", "mit" };
     bool isIGS = false;
-    for (int i = 0; i < finalAcIGS.size(); i++)
+    for (size_t i = 0; i < finalAcIGS.size(); i++)
     {
         if (ac == finalAcIGS[i])
         {
@@ -5512,7 +5543,7 @@ void FtpUtil::GetEop(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             acname = "IGS";
         }
 
-        for (int i = 0; i < fopt->hheop.size(); i++)
+        for (size_t i = 0; i < fopt->hheop.size(); i++)
         {
             std::string shh = CString::int2str(fopt->hheop[i], 2);
             std::string eopfile = acFile + swwww + sdow + "_" + shh + ".erp";
@@ -5786,7 +5817,7 @@ void FtpUtil::GetObx(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, qr = fopt->qr;
     std::string ac_i;
-    for (int i = 0; i < acs.size(); i++)
+    for (size_t i = 0; i < acs.size(); i++)
     {
         ac_i = acs[i];
         if (ac_i == "cnt")  /* for CNES real-time ORBEX files */
@@ -5822,7 +5853,7 @@ void FtpUtil::GetObx(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
                 /* delete some temporary directories */
                 std::vector<std::string> tmpdir = { "FORMAT_BIAIS_OFFI1", "FORMATBIAS_OFF_v1" };
-                for (int i = 0; i < tmpdir.size(); i++)
+                for (size_t i = 0; i < tmpdir.size(); i++)
                 {
                     if (access(tmpdir[i].c_str(), 0) == 0)
                     {
@@ -5982,7 +6013,7 @@ void FtpUtil::GetDsb(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, qr = fopt->qr;
     std::string sep;
     sep.push_back((char)FILEPATHSEP);
-    for (int i = 0; i < acs.size(); i++)
+    for (size_t i = 0; i < acs.size(); i++)
     {
         ac_i = acs[i];
         if (ac_i == "cas")  /* MGEX daily DSB (i.e., from CAS) */
@@ -6045,7 +6076,7 @@ void FtpUtil::GetDsb(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
             std::string dcbfile, dcb0file;
             std::vector<std::string> dcbtype = { "P1P2", "P1C1", "P2C2" };
-            for (int i = 0; i < dcbtype.size(); i++)
+            for (size_t i = 0; i < dcbtype.size(); i++)
             {
                 dcbfile = dcbtype[i] + syy + smm + ".DCB";
                 dcb0file = dcbtype[i] + syy + smm + ".DCB";
@@ -6154,7 +6185,7 @@ void FtpUtil::GetOsb(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     CString::ToUpper(ftpname);
     std::string wgetfull = fopt->wgetfull, gzipfull = fopt->gzipfull, qr = fopt->qr;
     std::string ac_i;
-    for (int i = 0; i < acs.size(); i++)
+    for (size_t i = 0; i < acs.size(); i++)
     {
         ac_i = acs[i];
         if (ac_i == "cnt")  /* CNES real-time OSB from CNES offline files */
@@ -6189,7 +6220,7 @@ void FtpUtil::GetOsb(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
                 /* delete some temporary directories */
                 std::vector<std::string> tmpdir = { "FORMAT_BIAIS_OFFI1", "FORMATBIAS_OFF_v1" };
-                for (int i = 0; i < tmpdir.size(); i++)
+                for (size_t i = 0; i < tmpdir.size(); i++)
                 {
                     if (access(tmpdir[i].c_str(), 0) == 0)
                     {
@@ -6379,7 +6410,6 @@ void FtpUtil::GetSnx(gtime_t ts, std::string dir, const ftpopt_t* fopt)
             cmd = wgetfull + " " + qr + " -nH -A " + snxxfile + cutdirs + url;
             std::system(cmd.c_str());
 
-            snxfile;
             CString::GetFile(dir, snx0filelong, snxxfile);
             if (access(snxxfile.c_str(), 0) == 0)
             {
@@ -6430,8 +6460,20 @@ void FtpUtil::GetSnx(gtime_t ts, std::string dir, const ftpopt_t* fopt)
                 if (fplog_.is_open()) fplog_ << "* INFO(FtpUtil::GetSnx): " << url0 << "  ->  " <<
                     localfile << "  OK" << std::endl;
 
+                if (isfound == 2)
+                {
+                    std::string change_filename;
+#ifdef _WIN32  /* for Windows */
+                    change_filename = "rename";
+#else          /* for Linux or Mac */
+                    change_filename = "mv";
+#endif
+                    cmd = change_filename + " " + snxfile + " " + snxfileshort;
+                    std::system(cmd.c_str());
+                }
+
                 /* to check if it needs to convert SINEX file with long name to those with short name */
-                if (fopt->l2s4eop > 0)
+                if (fopt->l2s4eop > 0 && isfound == 1)
                 {
                     std::string change_filename;
 #ifdef _WIN32  /* for Windows */
@@ -6502,7 +6544,7 @@ void FtpUtil::GetIono(gtime_t ts, std::string dir, const ftpopt_t* fopt)
     if (ac == "all") acs = acfinal;
     else if ((int)ac.find_first_of('+') > 0) acs = CString::split(ac, "+");
     else acs.push_back(ac);
-    for (int i = 0; i < acs.size(); i++)
+    for (size_t i = 0; i < acs.size(); i++)
     {
         std::string ionfileshort = acs[i] + "g" + sdoy + "0." + syy + "i";
         CString::ToUpper(acs[i]);
@@ -6983,7 +7025,7 @@ void FtpUtil::GetAntexIGS(gtime_t ts, std::string dir, const ftpopt_t* fopt)
 
     std::vector<std::string> atxfiles = {"igs14.atx", "igs20.atx"};
     std::string atxfile;
-    for (int i = 0; i < atxfiles.size(); i++)
+    for (size_t i = 0; i < atxfiles.size(); i++)
     {
         atxfile = atxfiles[i];
         if (access(atxfile.c_str(), 0) == -1)
@@ -7012,6 +7054,206 @@ void FtpUtil::GetAntexIGS(gtime_t ts, std::string dir, const ftpopt_t* fopt)
         else Logger::Trace(TINFO, "*** INFO(FtpUtil::GetAntexIGS): IGS ANTEX file " + atxfile + " has existed!");
     }
 } /* end of GetAntexIGS */
+
+/**
+* @brief   :  -
+* @param[I]:
+* @param[O]:
+* @return  :
+* @note    :
+**/
+std::string FtpUtil::LoadSp3File(gtime_t ts, std::string dir, std::string ac_s, bool longname)
+{
+    std::string sep;
+    sep.push_back((char)FILEPATHSEP);
+    int yyyy, doy, wwww, dow;
+    double sow;
+    std::string yyyy_s, doy_s, wwww_s, dow_s;
+    GTime::time2yrdoy(ts, yyyy, doy);
+    yyyy_s = CString::int2str(yyyy, 4);
+    doy_s = CString::int2str(doy, 3);
+    dow = GTime::time2gpst(ts, wwww, sow);
+    wwww_s = CString::int2str(wwww, 4);
+    dow_s = std::to_string(dow);
+    CString::ToLower(ac_s);
+    std::string ac = ac_s;
+    std::string sp3file, filename;
+    bool isfound = false;
+    if (longname) /* long file name */
+    {
+        bool isMGEX = false;
+        if (ac_s == "cod_m") ac = "cod";
+        else if (ac_s == "gfz_m") ac = "gfz";
+        else if (ac_s == "grg_m") ac = "grg";
+        else if (ac_s == "iac_m") ac = "iac";
+        else if (ac_s == "jax_m") ac = "jax";
+        else if (ac_s == "sha_m") ac = "sha";
+        else if (ac_s == "whu_m") ac = "whu";
+        if (ac_s.find("_m") != std::string::npos) isMGEX = true;
+        CString::ToUpper(ac);
+        std::vector<std::string> str;
+        if (isMGEX)
+        {
+            str.push_back(ac + "0MGXFIN_" + yyyy_s + doy_s + "0000_01D_");
+            str.push_back(ac + "0MGXRAP_" + yyyy_s + doy_s + "0000_01D_");
+        }
+        else
+        {
+            str.push_back(ac + "0OPSFIN_" + yyyy_s + doy_s + "0000_01D_");
+            str.push_back(ac + "0OPSRAP_" + yyyy_s + doy_s + "0000_01D_");
+        }
+        std::vector<std::string> sp3files;
+        for (size_t i = 0; i < str.size(); i++)
+        {
+            CString::GetFilesAll(dir, str[i], sp3files);
+            if ((int)sp3files.size() > 0) sp3file = sp3files[0];
+            if (access(sp3file.c_str(), 0) == 0)
+            {
+                isfound = true;
+                break;
+            }
+        }
+        if (isfound) filename = sp3file;
+        else filename = "";
+    }
+    else  /* short file name */
+    {
+        if (ac_s == "cod_m") ac = "com";
+        else if (ac_s == "gfz_m") ac = "gbm";
+        else if (ac_s == "grg_m") ac = "grm";
+        else if (ac_s == "iac_m") ac = "iac";
+        else if (ac_s == "jax_m") ac = "jax";
+        else if (ac_s == "sha_m") ac = "sha";
+        else if (ac_s == "whu_m") ac = "whu";
+        sp3file = dir + sep + ac + wwww_s + dow_s + ".sp3";
+        if (ac == "cod") sp3file = dir + sep + ac + wwww_s + dow_s + ".eph";
+        if (access(sp3file.c_str(), 0) == 0) filename = sp3file;
+        else filename = "";
+    }
+
+    return filename;
+} /* end of loadSp3File */
+
+/**
+* @brief   :  -
+* @param[I]:
+* @param[O]:
+* @return  :
+* @note    :
+**/
+bool FtpUtil::Sp3FilesIntoOneFile(std::vector<std::string> sp3files)
+{
+    if ((int)sp3files.size() != 3) return false;
+    if ((int)sp3files[1].length() == 0) return false;
+    std::string origin_file = sp3files[1] + ".orig";
+    if (access(origin_file.c_str(), 0) == -1)
+    {
+        std::string change_filename;
+#ifdef _WIN32  /* for Windows */
+        change_filename = "rename";
+#else          /* for Linux or Mac */
+        change_filename = "mv";
+#endif
+        std::string cmd = change_filename + " " + sp3files[1] + " " + origin_file;
+        std::system(cmd.c_str());
+    }
+    std::fstream filefp_out, filefp0_in, filefp1_in, filefp2_in;
+    std::string sline0, sline1, sline2;
+    filefp_out.open(sp3files[1], std::ios_base::out);
+    filefp1_in.open(origin_file, std::ios_base::in);
+    while (std::getline(filefp1_in, sline1))  /* to read and store the header components of the second SP3 file */
+    {
+        if (sline1.substr(0, 2) == "* ")  /* the first record of data block */
+        {
+            break;
+        }
+        filefp_out << sline1 << std::endl;
+    }
+
+    filefp0_in.open(sp3files[0], std::ios_base::in);
+    while (std::getline(filefp0_in, sline0))  /* to skip the header components of the first SP3 file */
+    {
+        if (sline0.substr(0, 2) == "* ")  /* the first record of data block */
+        {
+            break;
+        }
+    }
+    filefp_out << sline0 << std::endl;
+    while (std::getline(filefp0_in, sline0))  /* to read the data block of the first SP3 file */
+    {
+        if (filefp0_in.eof()) break;
+        if (sline0.find("EOF") != std::string::npos) break;
+        filefp_out << sline0 << std::endl;
+    }
+
+    filefp_out << sline1 << std::endl;
+    while (std::getline(filefp1_in, sline1))  /* to read the data block of the second SP3 file */
+    {
+        if (filefp1_in.eof()) break;
+        if (sline1.find("EOF") != std::string::npos) break;
+        filefp_out << sline1 << std::endl;
+    }
+
+    filefp2_in.open(sp3files[2], std::ios_base::in);
+    while (std::getline(filefp2_in, sline2))  /* to skip the header components of the third SP3 file */
+    {
+        if (sline2.substr(0, 2) == "* ")  /* the first record of data block */
+        {
+            break;
+        }
+    }
+    filefp_out << sline2 << std::endl;
+    while (std::getline(filefp2_in, sline2))  /* to read the data block of the third SP3 file */
+    {
+        if (filefp2_in.eof()) break;
+        filefp_out << sline2 << std::endl;
+    }
+
+    filefp_out.close();
+    filefp0_in.close();
+    filefp1_in.close();
+    filefp2_in.close();
+
+    return true;
+} /* end of Sp3FilesIntoOneFile */
+
+/**
+* @brief   : MergeSp3Files - to merge three consecutive sp3 files into one file
+* @param[I]: ts (start time)
+* @param[I]: dir (orbit directory)
+* @param[I]: ac (analysis center, i.e., 'igs', 'cod', et al.)
+* @param[I]: fopt (FTP options)
+* @param[O]: none
+* @return  : none
+* @note    :
+**/
+void FtpUtil::MergeSp3Files(gtime_t ts, std::string dir, std::string ac)
+{
+    /* change directory */
+#ifdef _WIN32   /* for Windows */
+    _chdir(dir.c_str());
+#else           /* for Linux or Mac */
+    chdir(dir.c_str());
+#endif
+
+    std::vector<std::string> sp3fileslong;
+    gtime_t tt = GTime::TimeAdd(ts, -86400.0);
+    for (int i = 0; i < 3; i++)
+    {
+        sp3fileslong.push_back(this->LoadSp3File(tt, dir, ac, true));  /* SP3 files with long file name */
+        tt = GTime::TimeAdd(tt, 86400.0);
+    }
+    this->Sp3FilesIntoOneFile(sp3fileslong);
+
+    std::vector<std::string> sp3filesshort;
+    tt = GTime::TimeAdd(ts, -86400.0);
+    for (int i = 0; i < 3; i++)
+    {
+        sp3filesshort.push_back(this->LoadSp3File(tt, dir, ac, false));  /* SP3 files with short file name */
+        tt = GTime::TimeAdd(tt, 86400.0);
+    }
+    this->Sp3FilesIntoOneFile(sp3filesshort);
+} /* end of MergeSp3Files */
 
 /**
 * @brief     : FtpDownload - GNSS data downloading via FTP
@@ -7280,6 +7522,11 @@ void FtpUtil::FtpDownload(const prcopt_t *popt, ftpopt_t* fopt)
                 /* precise orbit and clock product downloaded for the day after the specified day */
                 tt = GTime::TimeAdd(popt->ts, 86400.0);
                 GetOrbClk(tt, subdirs, prodtype, ac_i, fopt);
+            }
+
+            if (fopt->merge_sp3files)
+            {
+                this->MergeSp3Files(popt->ts, suborbdir, ac_i);
             }
         }
     }

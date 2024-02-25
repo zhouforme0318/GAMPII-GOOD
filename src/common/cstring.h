@@ -43,7 +43,7 @@ public:
     **/
     static void ToUpper(std::string& str)
     {
-        for (int i = 0; i < str.size(); i++) str[i] = toupper(str[i]);
+        for (size_t i = 0; i < str.size(); i++) str[i] = toupper(str[i]);
     } /* end of ToUpper */
 
     /**
@@ -54,7 +54,7 @@ public:
     **/
     static void ToLower(std::string& str)
     {
-        for (int i = 0; i < str.size(); i++) str[i] = tolower(str[i]);
+        for (size_t i = 0; i < str.size(); i++) str[i] = tolower(str[i]);
     } /* end of ToLower */
 
     /* split buff by sep */
@@ -153,27 +153,21 @@ public:
     /**
     * @brief   : GetFilesAll - get the name list of all the files from the current directory
     * @param[I]: dir (the current directory)
-    * @param[I]: suffix (file suffix)
+    * @param[I]: str (string to match)
     * @param[O]: files (the name list of all the files)
     * @return  : none
     * @note    :
     **/
-    static void GetFilesAll(std::string dir, std::string suffix, std::vector<std::string>& files)
+    static void GetFilesAll(std::string dir, std::string str, std::vector<std::string>& files)
     {
-        /* change directory */
-#ifdef _WIN32   /* for Windows */
-        _chdir(dir.c_str());
-#else           /* for Linux or Mac */
-        chdir(dir.c_str());
-#endif
-
         std::string cmd, filelist = "files.list";
 #ifdef _WIN32   /* for Windows */
-        cmd = "dir /b | find \"" + suffix + "\"" + " > " + filelist;
+        cmd = "dir /b " + dir + " | find \"" + str + "\"" + " > " + filelist;
 #else           /* for Linux or Mac */
-        cmd = "ls *" + suffix + "* > " + filelist;
+        cmd = "ls " + dir + "/*" + str + "* > " + filelist;
 #endif
-        std::system(cmd.c_str());
+        int stat = std::system(cmd.c_str());
+        if (!stat) stat = stat;
 
         files.clear();
         if (access(filelist.c_str(), 0) == 0)
@@ -181,15 +175,26 @@ public:
             std::ifstream fillst(filelist.c_str());
             if (!fillst.is_open())
             {
-                Logger::Trace(TERROR, "*** ERROR(CString::GetFilesAll): open files.list = " + filelist + " file failed, please check it");
-
+                std::string out = "*** ERROR(CString::getFiles): open files.list = " + filelist + " file failed, please check it";
+                std::cout << out << std::endl;
                 return;
             }
 
             std::string filename;
             while (getline(fillst, filename))
             {
+                trim(filename);
+#ifdef _WIN32   /* for Windows */
+                std::string sep;
+                sep.push_back((char)FILEPATHSEP);
+                if (filename.length() > str.length())
+                {
+                    filename = dir + sep + filename;
+                    files.push_back(filename);
+                }
+#else           /* for Linux or Mac */
                 files.push_back(filename);
+#endif
             }
 
             /* close 'files.list' */
@@ -202,7 +207,8 @@ public:
 #else           /* for Linux or Mac */
         cmd = "rm -rf " + filelist;
 #endif
-        std::system(cmd.c_str());
+        stat = std::system(cmd.c_str());
+        if (!stat) stat = stat;
     } /* end of GetFilesAll */
 };
 

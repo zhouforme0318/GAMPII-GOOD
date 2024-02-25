@@ -1,4 +1,4 @@
-# GOOD, version 3.0
+# GOOD, version 3.1
 Global Navigation Satellite System (GNSS) data processing requires a user to download various observation and product files. These file downloads, which are particularly important for precise point positioning (PPP), can be a burden for new and experienced GNSS users. Up to now, there are few standalone open-source software tools available to accomplish this task. In order to address this need, an easy-to-use GNSS data and product downloading toolkit called GOOD (GNSS Observations and prOducts Downloader) was developed by <strong><font color=#ED1B24>UNI</font><font color=#27A9DD>Q</font></strong> navigation lab (**U**biquitous **N**avigation & **I**ntegrated positioning lab in **Q**uest) at Shandong University of Science and Technology (SDUST). GOOD is compatible with most popular operating systems, actively maintained on GitHub, and stable at the current version 3.0.
 # Features
 Main feature of GOOD are various GNSS observations and products downloading, i.e., 
@@ -116,6 +116,8 @@ If some GNSS data cannot be successfully downloaded, check your network first. T
 - Vers. 2.2  
   Please refer to the header component of FtpUtil.cpp
 - Vers. 3.0  
+  Please refer to the header component of FtpUtil.cpp
+- Vers. 3.1  
   Please refer to the header component of FtpUtil.cpp
 # Acknowledgments
 - Dr Cheng Wang @ BUAA provided the C++ code for observation downloading as reference

@@ -20,7 +20,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
+#include "common/common.h"
+#include "common/types.h"
+#include "common/gtime.h"
 #include "common/logger.h"
+#include "common/cstring.h"
 #include "core/config.h"
 
 
@@ -28,21 +32,6 @@
 int main(int argc, char * argv[])
 {
     std::string cfgfile;  /* configuration file */
-
-// #if (defined(_WIN32) && defined(_DEBUG))
-//     strcpy(cfgFile, "D:\\Projects\\proj_VScode\\GOOD\\dataset\\GOOD_cfg.yam");
-// #else
-//     if (argc != 2)
-//     {
-//         std::cout << std::endl;
-//         std::cout << "* Usage: run_GOOD GOOD_cfg.txt" << std::endl;
-//         std::cout << "         run_GOOD GOOD_cfg.yaml" << std::endl;
-//         std::cout << std::endl;
-
-//         return -1;
-//     }
-//     else strcpy(cfgFile, argv[1]);
-// #endif
     if (argc != 2)
     {
         std::cout << std::endl;

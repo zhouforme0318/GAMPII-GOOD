@@ -277,7 +277,6 @@ public:
     **/
     static std::string time2str(gtime_t tt)
     {
-        int n = 3;   //number of decimals
         std::vector<double> ep;
         std::stringstream stime;
 

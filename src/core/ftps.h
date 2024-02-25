@@ -350,6 +350,35 @@ private:
     **/
     void GetAntexIGS(gtime_t ts, std::string dir, const ftpopt_t* fopt);
 
+    /**
+    * @brief   :  -
+    * @param[I]:
+    * @param[O]:
+    * @return  :
+    * @note    :
+    **/
+    std::string LoadSp3File(gtime_t ts, std::string dir, std::string ac_s, bool longname);
+
+    /**
+    * @brief   :  -
+    * @param[I]:
+    * @param[O]:
+    * @return  :
+    * @note    :
+    **/
+    bool Sp3FilesIntoOneFile(std::vector<std::string> sp3files);
+
+    /**
+    * @brief   : MergeSp3Files - to merge three consecutive sp3 files into one file
+    * @param[I]: ts (start time)
+    * @param[I]: dir (orbit directory)
+    * @param[I]: ac (analysis center, i.e., 'igs', 'cod', et al.)
+    * @param[O]: none
+    * @return  : none
+    * @note    :
+    **/
+    void MergeSp3Files(gtime_t ts, std::string dir, std::string ac);
+
 public:
     FtpUtil() = default;
 	~FtpUtil() = default;

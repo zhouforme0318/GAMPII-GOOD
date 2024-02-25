@@ -5,44 +5,67 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Windows GOOD",
+            "name": "Windows debug GOOD",
             "type": "cppvsdbg",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/bin/Debug/run_GOOD",
-            // "program": "${workspaceFolder}/bin/Release/run_GOOD",
-            "args": [
-                "./dataset_Win/GOOD_cfg.yaml"
-            ],
+            "program": "${workspaceFolder}\\bin\\Debug\\run_GOOD",
+            "args": ["${workspaceFolder}\\conf\\GOOD_cfg.yaml"],
             "stopAtEntry": false,
             "environment": [],
             "console": "integratedTerminal"
         },
         {
-            "name": "Linux GOOD",
-            "type": "cppdbg",
+            "name": "Windows release GOOD",
+            "type": "cppvsdbg",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/bin/run_GOOD",
-            "args": [
-                "./dataset_Linux/GOOD_cfg.yaml"
-            ],
+            "program": "${workspaceFolder}\\bin\\Release\\run_GOOD",
+            "args": ["${workspaceFolder}\\conf\\GOOD_cfg.yaml"],
             "stopAtEntry": false,
+            "environment": [],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Linux debug GOOD",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin_debug/run_GOOD",
+            // "args": ["${workspaceFolder}/conf/GOOD_cfg.yaml"],
+            "args": ["/home/zhouforme/Documents/MySoftwares/proj_Cpp/UNIQ/dataset/GOOD_temporary.yaml"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
                 {
-                    "description": "为 gdb 启用整齐打印",
+                    "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
-                },
+                }
+            ],
+            "preLaunchTask": "debug GOOD"
+        },
+        {
+            "name": "Linux release GOOD",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin_release/run_GOOD",
+            "args": ["${workspaceFolder}/conf/GOOD_cfg.yaml"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
                 {
-                    "description": "将反汇编风格设置为 Intel",
-                    "text": "-gdb-set disassembly-flavor intel",
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask":"release GOOD"
         }
     ]
 }

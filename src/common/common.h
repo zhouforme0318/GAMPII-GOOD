@@ -22,15 +22,14 @@
 #include <windows.h>
 #include <direct.h>
 #include "..\win\unistd.h"
+#pragma warning(disable:4996)
+#pragma warning(disable:4101)
 #else          /* for Linux or Mac */
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
 #include <pthread.h>
 #endif
-
-#pragma warning(disable:4996)
-#pragma warning(disable:4101)
 
 /* Trace debug export level --------------------------------------------------*/
 enum LogLevel
